@@ -410,7 +410,8 @@
 
 	local PlaceIds = {
 		MainMenu = 4588604953,
-		Casual = {8343259840, 15169316384},
+		Casual = 8343259840,
+		MCasual = 15169316384,
 		Brawl = 15169306359,
 		Standard = 15169303036,
 		Infection = 15169310267,
@@ -424,8 +425,6 @@
 		end
 		return nil -- if not found
 	end
-
-	local allowedModes = { "Casual", "Standard" }
 
 	local currentMode = CheckMode()
 
@@ -1281,7 +1280,7 @@
 		Title = "Criminality Simple Script",
 		SubTitle = "by ustink4040",
 		TabWidth = 160,
-		Size = UDim2.fromOffset(290,290),
+		Size = UDim2.fromOffset(400,290),
 		Acrylic = false,
 		Theme = "Darker",
 		MinimizeKey = Enum.KeyCode.RightControl,
@@ -1441,7 +1440,7 @@
 		local VisualsTab = Tabs.Visuals
 		local VisualsWorldSection = VisualsTab:AddSection("World")
 
-		if currentMode == "Casual" or currentMode == "Standard" then
+		if currentMode == "Casual" or currentMode == "MCasual" or currentMode == "Standard" then
 			-- Shared toggles
 			VisualsWorldSection:AddToggle("Safe_ESP", {
 				Title = "Safe ESP",
@@ -1483,7 +1482,7 @@
 						ToggleCrateESP(Value)
 					end
 				})
-			elseif currentMode == "Casual"then
+			elseif currentMode == "Casual"  or currentMode == "MCasual" then
 				VisualsWorldSection:AddParagraph({
 					Title = "Crate ESP Unavailable",
 					Content = "Crate ESP is only available in Standard mode.",
@@ -1532,7 +1531,7 @@
 	do
 		local MiscTab = Tabs.Misc
 		local MiscSection = MiscTab:AddSection("Script")
-		if currentMode == "Casual" or currentMode == "Standard" or currentMode == "Infection" or currentMode == "Brawl" then
+		if currentMode == "Casual"  or currentMode == "MCasual" or currentMode == "Standard" or currentMode == "Infection" or currentMode == "Brawl" then
 		MiscSection:AddButton({
 			Title = "Return to Menu",
 			Description = "Returns you to the main menu.",
@@ -1555,7 +1554,7 @@
 		})
 		end
 		local MiscWorld = MiscTab:AddSection("World")
-		if currentMode == "Casual" or currentMode == "Standard" then
+		if currentMode == "Casual"  or currentMode == "MCasual" or currentMode == "Standard" then
 			MiscWorld:AddToggle("Auto_Lockpick",{
 				Title = "Auto Lockpick",
 				Default = false,
