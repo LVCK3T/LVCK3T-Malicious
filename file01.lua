@@ -1,4 +1,6 @@
-	--// Cache
+local succ, err = pcall(function()
+
+		--// Cache
 	local game, workspace = game, workspace
 	local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick
 	local Vector2new, Vector3zero, CFramenew, Color3fromRGB, Color3fromHSV, Drawingnew, TweenInfonew = Vector2.new, Vector3.zero, CFrame.new, Color3.fromRGB, Color3.fromHSV, Drawing.new, TweenInfo.new
@@ -69,6 +71,7 @@
 	local autoLockpickThread
 
 	local IsOnMobile = false
+	local FluentMenu
 
 	xpcall(function()
 		IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform())
@@ -515,7 +518,47 @@
 	end
 
 	-- Mobile Helper
+	local function Hidebuttons()
+		-- List of target asset IDs
+		local targetIds = {
+			"rbxassetid://9886659276",
+			"rbxassetid://9886659671",
+			"rbxassetid://9886659406"
+		}
 
+		-- Convert list into a lookup table for faster checks
+		local idLookup = {}
+		for _, id in ipairs(targetIds) do
+			idLookup[id] = true
+		end
+
+		-- Reference CoreGui
+		local CoreGui = game:GetService("CoreGui")
+
+		-- Function to scan a ScreenGui for ImageLabels with matching IDs
+		local function scanScreenGui(screenGui)
+			for _, descendant in ipairs(screenGui:GetDescendants()) do
+				if descendant:IsA("ImageLabel") then
+					if idLookup[descendant.Image] then
+						local parent = descendant.Parent
+						if parent and parent:IsA("GuiObject") then
+							parent.Visible = false
+							print("Disabled parent of:", descendant:GetFullName(), "Image:", descendant.Image)
+						else
+							print("Found ImageLabel but parent is not a GuiObject:", descendant:GetFullName())
+						end
+					end
+				end
+			end
+		end
+
+		-- Scan all ScreenGuis inside CoreGui
+		for _, gui in ipairs(CoreGui:GetChildren()) do
+			if gui:IsA("ScreenGui") then
+				scanScreenGui(gui)
+			end
+		end
+	end
 
 	-- Billboard creation (safe adornee binding)
 	local function ensureBillboard(target, prefix)
@@ -1243,6 +1286,8 @@
 		MinimizeKey = Enum.KeyCode.RightControl,
 	})
 
+	for _, gui in ipairs(CoreGui:GetChildren()) do if gui:IsA("ScreenGui") and gui.AbsoluteSize == Vector2.new(580,460) then FluentMenu = gui break end end --// Find Menu
+	
 	local Tabs = {
 		Information = Window:AddTab({Title = "Information", Icon = "info"}),
 		Combat = Window:AddTab({Title = "Combat", Icon = "crosshair"}),
@@ -1512,6 +1557,117 @@
 		end
 	end
 
+	local MobileConn = {}
+	if IsOnMobile then
+		Hidebuttons()
+		local CRIM_01_BTN = Instance.new("ScreenGui")
+		local Frame = Instance.new("Frame")
+		local Frame_2 = Instance.new("Frame")
+		local UICorner = Instance.new("UICorner")
+		local UICorner_2 = Instance.new("UICorner")
+		local UIStroke = Instance.new("UIStroke")
+		local TextButton = Instance.new("TextButton")
+		local TextLabel = Instance.new("TextLabel")
+		local ImageLabel = Instance.new("ImageLabel")
+
+		CRIM_01_BTN.Name = "CRIM_01_BTN"
+		CRIM_01_BTN.Parent = CoreGui
+		Frame.Size = UDim2.new(0.053, 0,0.092, 0)
+		Frame.BackgroundColor3 = Color3.fromRGB(228, 228, 228)
+		Frame.ZIndex = 2
+		Frame.Parent = CRIM_01_BTN
+
+		UICorner.CornerRadius = UDim.new(0.1, 0)
+		UICorner.Parent = Frame
+
+		Frame_2.ZIndex = 3
+		Frame_2.BackgroundColor3 = Color3.fromRGB(238, 238, 238)
+		Frame_2.Position = UDim2.new(0.096, 0, 0.096, 0)
+		Frame_2.Size = UDim2.new(0.803, 0, 0.803, 0)
+		Frame_2.Parent = Frame
+
+		UICorner_2.CornerRadius = UDim.new(0.1, 0)
+		UICorner_2.Parent = Frame_2
+
+		UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		UIStroke.Color = Color3.fromRGB(203,203,203)
+		UIStroke.Parent = Frame_2
+
+		TextButton.ZIndex = 3
+		TextButton.BackgroundTransparency = 1
+		TextButton.Size = UDim2.new(1,0,1,0)
+		TextButton.Text = ""
+		TextButton.Parent = Frame_2
+
+		TextLabel.ZIndex = 4
+		TextLabel.BackgroundTransparency = 1
+		TextLabel.TextScaled = true
+		TextLabel.TextWrapped = true
+		TextLabel.RichText = true
+		TextLabel.Position = UDim2.new(0, 0, 0.137, 0)
+		TextLabel.Size = UDim2.new(1, 0, 0.738, 0)
+		TextLabel.Text = "Tog. Menu"
+		TextLabel.Font = Enum.Font.MontserratBold
+		TextLabel.Parent = TextButton
+
+		ImageLabel.Image = "rbxassetid://8992230677"
+		ImageLabel.ImageColor3 = Color3.fromRGB(0,0,0)
+		ImageLabel.BackgroundTransparency = 1
+		ImageLabel.Position = UDim2.new(-0.334, 0, -0.323, 0)
+		ImageLabel.Size = UDim2.new(1.641, 0, 1.641, 0)
+		ImageLabel.Parent = Frame
+
+		local dragging = false
+		local dragInput = nil
+		local dragStart, startPos
+
+		local function update(input)
+			local delta = input.Position - dragStart
+			local newX = startPos.X.Offset + delta.X
+			local newY = startPos.Y.Offset + delta.Y
+
+			-- clamp against parent size
+			local parentSize = Frame.Parent.AbsoluteSize
+			local maxX = parentSize.X - Frame.AbsoluteSize.X
+			local maxY = parentSize.Y - Frame.AbsoluteSize.Y
+
+			newX = math.clamp(newX, 0, maxX)
+			newY = math.clamp(newY, 0, maxY)
+
+			-- use pure offsets so it doesn’t jump or shrink
+			Frame.Position = UDim2.new(0, newX, 0, newY)
+		end
+
+		MobileConn[0] = TextButton.InputBegan:Connect(function()
+			
+		end)
+
+		MobileConn[1] = Frame.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = Frame.Position
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
+			end
+		end)
+
+		MobileConn[2] = Frame.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				dragInput = input
+			end
+		end)
+
+		MobileConn[3] = UserInputService.InputChanged:Connect(function(input)
+			if input == dragInput and dragging then
+				update(input)
+			end
+		end)
+	end
+
 	--// Privacy protection
 	task.spawn(function()
 		local target
@@ -1561,6 +1717,8 @@
 					Aimbot:Exit()
 				end
 
+				for _, c in ipairs(MobileConn) do if c then c:Disconnect() end end
+
 				-- Disconnect all ESP-related connections
 				local function DisconnectESPConnections()
 					if safeConn then safeConn:Disconnect(); safeConn = nil end
@@ -1587,11 +1745,27 @@
 
 	SaveManager:IgnoreThemeSettings()
 
+	SaveManager:SetIgnoreIndexes({})
+
 	InterfaceManager:SetFolder("ustink4040Scripts")
 	SaveManager:SetFolder("ustink4040Scripts/Criminality")
 
 	InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 	SaveManager:BuildConfigSection(Tabs.Settings)
 
+
 	Window:SelectTab(1)
-	SaveManager:LoadAutoLoadConfig()
+
+	Fluent:Notify({
+		Title = "Fluent",
+		Content = "The script has been loaded.",
+		Duration = 8
+	})
+
+	SaveManager:LoadAutoloadConfig()
+
+end)
+
+if err then
+	warn("[ERROR]: "..tostring(err))
+end
