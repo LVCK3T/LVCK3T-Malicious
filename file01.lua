@@ -1584,7 +1584,7 @@
 
 		TextButton.Position = UDim2.new(0.396, 0,0, 0)
 		TextButton.Size = UDim2.new(0.02, 0,0.034, 0)
-		TextButton.text = "TG"
+		TextButton.Text = "TG"
 		TextButton.Parent = CRIM_01_BTN
 		UICorner.CornerRadius = UDim.new(1,0)
 		UICorner.Parent = TextButton
