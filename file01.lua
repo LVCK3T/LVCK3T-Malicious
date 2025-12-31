@@ -156,31 +156,50 @@
 	local GetClosestPlayer = function()
 		local Settings = Environment.Settings
 		local LockPart = Settings.LockPart
-		local ScreenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+		-- Use ScreenCenter on mobile, mouse location otherwise
+		local Pointer = IsOnMobile and Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) or GetMouseLocation(UserInputService)
 
 		if not Environment.Locked then
 			RequiredDistance = Environment.FOVSettings.Enabled and Environment.FOVSettings.Radius or 2000
+
 			for _, Value in next, GetPlayers(Players) do
 				local Character = __index(Value, "Character")
 				local Humanoid = Character and FindFirstChildOfClass(Character, "Humanoid")
+
 				if Value ~= LocalPlayer and not tablefind(Environment.Blacklisted, __index(Value, "Name")) and Character and FindFirstChild(Character, LockPart) and Humanoid then
 					local PartPosition, TeamCheckOption = __index(Character[LockPart], "Position"), Environment.DeveloperSettings.TeamCheckOption
-					if Settings.TeamCheck and __index(Value, TeamCheckOption) == __index(LocalPlayer, TeamCheckOption) then continue end
-					if Settings.AliveCheck and __index(Humanoid, "Health") <= 0 then continue end
+
+					if Settings.TeamCheck and __index(Value, TeamCheckOption) == __index(LocalPlayer, TeamCheckOption) then
+						continue
+					end
+
+					if Settings.AliveCheck and __index(Humanoid, "Health") <= 0 then
+						continue
+					end
+
 					if Settings.WallCheck then
 						local BlacklistTable = GetDescendants(__index(LocalPlayer, "Character"))
-						for _, v in next, GetDescendants(Character) do BlacklistTable[#BlacklistTable + 1] = v end
-						if #GetPartsObscuringTarget(Camera, {PartPosition}, BlacklistTable) > 0 then continue end
+
+						for _, Value in next, GetDescendants(Character) do
+							BlacklistTable[#BlacklistTable + 1] = Value
+						end
+
+						if #GetPartsObscuringTarget(Camera, {PartPosition}, BlacklistTable) > 0 then
+							continue
+						end
 					end
+
 					local Vector, OnScreen, Distance = WorldToViewportPoint(Camera, PartPosition)
 					Vector = ConvertVector(Vector)
-					Distance = (ScreenCenter - Vector).Magnitude
+					Distance = (Pointer - Vector).Magnitude
+
 					if Distance < RequiredDistance and OnScreen then
 						RequiredDistance, Environment.Locked = Distance, Value
 					end
 				end
 			end
-		elseif (ScreenCenter - ConvertVector(WorldToViewportPoint(Camera, __index(__index(__index(Environment.Locked, "Character"), LockPart), "Position")))).Magnitude > RequiredDistance then
+		elseif (Pointer - ConvertVector(WorldToViewportPoint(Camera, __index(__index(__index(Environment.Locked, "Character"), LockPart), "Position")))).Magnitude > RequiredDistance then
 			CancelLock()
 		end
 	end
@@ -923,7 +942,6 @@
 
 		if state then
 			if not autoLockpickThread then
-				-- track respawns to keep references fresh
 				charConn = LocalPlayer.CharacterAdded:Connect(function() end)
 
 				autoLockpickThread = task.spawn(function()
