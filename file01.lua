@@ -1275,7 +1275,20 @@
 
 	--// UI
 
-	local Window = Fluent:CreateWindow({
+	local Window
+
+	if IsOnMobile then
+	Window = Fluent:CreateWindow({
+		Title = "Criminality Simple Script",
+		SubTitle = "by ustink4040",
+		TabWidth = 160,
+		Size = UDim2.fromOffset(290,230),
+		Acrylic = false,
+		Theme = "Darker",
+		MinimizeKey = Enum.KeyCode.RightControl,
+	})
+	else
+	Window = Fluent:CreateWindow({
 		Title = "Criminality Simple Script",
 		SubTitle = "by ustink4040",
 		TabWidth = 160,
@@ -1284,6 +1297,7 @@
 		Theme = "Darker",
 		MinimizeKey = Enum.KeyCode.RightControl,
 	})
+	end
 
 	for _, gui in ipairs(CoreGui:GetChildren()) do
 		 if gui:IsA("ScreenGui") and gui.AbsoluteSize == Vector2.new(580,460) then
@@ -1568,6 +1582,7 @@
 		local TextButton = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
 
+		TextButton.Position = UDim2.new(0.396, 0,0, 0)
 		TextButton.Size = UDim2.new(0.02, 0,0.034, 0)
 		TextButton.text = "TG"
 		TextButton.Parent = CRIM_01_BTN
