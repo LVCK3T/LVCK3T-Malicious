@@ -1428,7 +1428,7 @@
 		local VisualsTab = Tabs.Visuals
 		local VisualsWorldSection = VisualsTab:AddSection("World")
 
-		if currentMode == "Casual" or currentMode == "Standard" then
+		if currentMode == "Casual" or currentMode == "MCasual" or currentMode == "Standard" then
 			-- Shared toggles
 			VisualsWorldSection:AddToggle("Safe_ESP", {
 				Title = "Safe ESP",
@@ -1470,7 +1470,7 @@
 						ToggleCrateESP(Value)
 					end
 				})
-			elseif currentMode == "Casual" then
+			elseif currentMode == "Casual" or currentMode == "MCasual" then
 				VisualsWorldSection:AddParagraph({
 					Title = "Crate ESP Unavailable",
 					Content = "Crate ESP is only available in Standard mode.",
@@ -1574,53 +1574,7 @@
 		UICorner.CornerRadius = UDim.new(1,0)
 		UICorner.Parent = TextButton
 
-		local dragging = false
-		local dragInput = nil
-		local dragStart, startPos
-
-		local function update(input)
-			local delta = input.Position - dragStart
-			local newX = startPos.X.Offset + delta.X
-			local newY = startPos.Y.Offset + delta.Y
-
-			-- clamp against parent size
-			local parentSize = TextButton.Parent.AbsoluteSize
-			local maxX = parentSize.X - TextButton.AbsoluteSize.X
-			local maxY = parentSize.Y - TextButton.AbsoluteSize.Y
-
-			newX = math.clamp(newX, 0, maxX)
-			newY = math.clamp(newY, 0, maxY)
-
-			-- use pure offsets so it doesn’t jump or shrink
-			TextButton.Position = UDim2.new(0, newX, 0, newY)
-		end
-
 		MobileConn[1] = TextButton.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-				dragging = true
-				dragStart = input.Position
-				startPos = TextButton.Position
-				input.Changed:Connect(function()
-					if input.UserInputState == Enum.UserInputState.End then
-						dragging = false
-					end
-				end)
-			end
-		end)
-
-		MobileConn[2] = TextButton.InputChanged:Connect(function(input)
-			if input.UserInputType == TextButton.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-				dragInput = input
-			end
-		end)
-
-		MobileConn[3] = UserInputService.InputChanged:Connect(function(input)
-			if input == dragInput and dragging then
-				update(input)
-			end
-		end)
-
-		MobileConn[4] = TextButton.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 				if FluentMenu then
 					FluentMenu.Enabled = not FluentMenu.Enabled
