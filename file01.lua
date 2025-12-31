@@ -1,4 +1,4 @@
-local succ, err = pcall(function()
+
 
 		--// Cache
 	local game, workspace = game, workspace
@@ -1764,8 +1764,3 @@ local succ, err = pcall(function()
 
 	SaveManager:LoadAutoloadConfig()
 
-end)
-
-if err then
-	warn("[ERROR]: "..tostring(err))
-end
