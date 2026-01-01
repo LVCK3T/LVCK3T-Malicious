@@ -1363,7 +1363,7 @@
 		Title = "Criminality Simple Script",
 		SubTitle = "by ustink4040",
 		TabWidth = 160,
-		Size = UDim2.fromOffset(200,180),
+		Size = UDim2.fromOffset(200,300),
 		Acrylic = false,
 		Theme = "Darker",
 		MinimizeKey = Enum.KeyCode.RightControl,
