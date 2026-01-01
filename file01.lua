@@ -1682,6 +1682,7 @@
 		local TextButton = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
 
+		CRIM_01_BTN.Parent = CoreGui
 		TextButton.Position = UDim2.new(0.396, 0,0, 0)
 		TextButton.Size = UDim2.new(0.02, 0,0.034, 0)
 		TextButton.Text = "TG"
