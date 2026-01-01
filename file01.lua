@@ -53,6 +53,7 @@
 	local Map = workspace:WaitForChild("Map")
 	local Filter = workspace:WaitForChild("Filter")
 	local BredMakurz = Map:WaitForChild("BredMakurz")
+	local Doors = Map:WaitForChild("Doors")
 	local ATMz = Map:WaitForChild("ATMz")
 	local SpawnedPiles = Filter:WaitForChild("SpawnedPiles")
 	local Shopz = Map:WaitForChild("Shopz")
@@ -999,8 +1000,11 @@
 							continue
 						end
 
-						-- find nearest valid (unbroken) safe
-						local nearestSafe, nearestDist
+						----------------------------------------------------
+						-- find nearest valid (unbroken) safe or door
+						----------------------------------------------------
+						local nearestTarget, nearestDist, targetType
+						-- Safes
 						for _, model in ipairs(BredMakurz:GetChildren()) do
 							if model:IsA("Model") and model.Name:find("Safe") then
 								local values = model:FindFirstChild("Values")
@@ -1008,109 +1012,164 @@
 								if broken and broken:IsA("BoolValue") and broken.Value then
 									continue
 								end
-
 								local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
 								if primary then
 									local dist = (hrp.Position - primary.Position).Magnitude
 									if not nearestDist or dist < nearestDist then
-										nearestSafe, nearestDist = model, dist
+										nearestTarget, nearestDist, targetType = model, dist, "Safe"
+									end
+								end
+							end
+						end
+						-- Doors
+						for _, model in ipairs(Doors:GetChildren()) do
+							if model:IsA("Model") then
+								local values = model:FindFirstChild("Values")
+								local broken = values and values:FindFirstChild("Broken")
+								local open = values and values:FindFirstChild("Open")
+								local locked = values and values:FindFirstChild("Locked")
+								if (broken and broken.Value) or (open and open.Value) then
+									continue
+								end
+								if locked and locked.Value then
+									local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+									if primary then
+										local dist = (hrp.Position - primary.Position).Magnitude
+										if not nearestDist or dist < nearestDist then
+											nearestTarget, nearestDist, targetType = model, dist, "Door"
+										end
 									end
 								end
 							end
 						end
 
-						if nearestSafe and nearestDist and nearestDist <= DISTANCE_THRESHOLD then
-							-- recheck broken just before acting
-							local values = nearestSafe:FindFirstChild("Values")
+						----------------------------------------------------
+						-- act on nearest target
+						----------------------------------------------------
+						if nearestTarget and nearestDist and nearestDist <= DISTANCE_THRESHOLD then
+							local values = nearestTarget:FindFirstChild("Values")
 							local broken = values and values:FindFirstChild("Broken")
 							if broken and broken:IsA("BoolValue") and broken.Value then
 								task.wait(0.2)
 								continue
 							end
 
-							-- find any Lockpick in backpack
-							local lockpickTool
+							local lockpickTool, crowbar
 							if backpack then
 								for _, tool in ipairs(backpack:GetChildren()) do
 									if tool:IsA("Tool") and tool.Name == "Lockpick" then
 										lockpickTool = tool
-										break
+									elseif tool:IsA("Tool") and tool.Name == "Crowbar" then
+										crowbar = tool
 									end
 								end
 							end
+							crowbar = crowbar or (character and character:FindFirstChild("Crowbar"))
 
-							-- fallback: Crowbar only (no fists for safes)
-							local crowbar = (backpack and backpack:FindFirstChild("Crowbar")) or (character and character:FindFirstChild("Crowbar"))
-
-							if lockpickTool then
-								-- equip lockpick once
-								local currentTool = character:FindFirstChildWhichIsA("Tool")
-								if currentTool ~= lockpickTool then
-									humanoid:EquipTool(lockpickTool)
-								end
-
-								-- wait for GUI and run until either GUI closes or safe becomes broken
-								local lockpickGUI = PlayerGui:WaitForChild("LockpickGUI", math.huge)
-								currentIndex = 1
-
-								while autoLockpickEnabled and not scriptUnloaded
-									and lockpickGUI and lockpickGUI.Parent
-									and lockpickGUI.Enabled do
-
-									-- stop if safe flips to broken mid-minigame
-									local values2 = nearestSafe:FindFirstChild("Values")
-									local broken2 = values2 and values2:FindFirstChild("Broken")
-									if broken2 and broken2:IsA("BoolValue") and broken2.Value then
-										break
+							if targetType == "Safe" then
+								------------------------------------------------
+								-- Safe logic: prioritize Lockpick, fallback Crowbar
+								------------------------------------------------
+								if lockpickTool then
+									local currentTool = character:FindFirstChildWhichIsA("Tool")
+									if currentTool ~= lockpickTool and humanoid then
+										humanoid:EquipTool(lockpickTool)
 									end
-
-									local frames = lockpickGUI:FindFirstChild("MF")
-										and lockpickGUI.MF:FindFirstChild("LP_Frame")
-										and lockpickGUI.MF.LP_Frame:FindFirstChild("Frames")
-
-									if frames then
-										local barName = barOrder[currentIndex]
-										local frame = frames:FindFirstChild(barName)
-										if frame then
-											local bar = frame:FindFirstChild("Bar")
-											if bar and bar:IsA("ImageLabel") then
-												bar.Size = UDim2.new(0, 500, 0, 500)
-												bar.Visible = false
-
-												local now = os.clock()
-												if (now - lastClickTime) > GLOBAL_COOLDOWN then
-													mouse1click()
-													lastClickTime = now
-													currentIndex = currentIndex % #barOrder + 1
+									local lockpickGUI = PlayerGui:WaitForChild("LockpickGUI", math.huge)
+									currentIndex = 1
+									while autoLockpickEnabled and not scriptUnloaded
+										and lockpickGUI and lockpickGUI.Parent
+										and lockpickGUI.Enabled do
+										local values2 = nearestTarget:FindFirstChild("Values")
+										local broken2 = values2 and values2:FindFirstChild("Broken")
+										if broken2 and broken2.Value then break end
+										local frames = lockpickGUI:FindFirstChild("MF")
+											and lockpickGUI.MF:FindFirstChild("LP_Frame")
+											and lockpickGUI.MF.LP_Frame:FindFirstChild("Frames")
+										if frames then
+											local barName = barOrder[currentIndex]
+											local frame = frames:FindFirstChild(barName)
+											if frame then
+												local bar = frame:FindFirstChild("Bar")
+												if bar and bar:IsA("ImageLabel") then
+													bar.Size = UDim2.new(0, 500, 0, 500)
+													bar.Visible = false
+													local now = os.clock()
+													if (now - lastClickTime) > GLOBAL_COOLDOWN then
+														mouse1click()
+														lastClickTime = now
+														currentIndex = currentIndex % #barOrder + 1
+													end
 												end
 											end
 										end
+										task.wait()
 									end
-
-									task.wait()
+								elseif crowbar then
+									local currentTool = character:FindFirstChildWhichIsA("Tool")
+									if currentTool ~= crowbar and humanoid then
+										humanoid:EquipTool(crowbar)
+									end
+									local now = os.clock()
+									if (now - lastClickTime) > GLOBAL_COOLDOWN then
+										keypress(0x46)
+										task.wait(0.1)
+										keyrelease(0x46)
+										lastClickTime = now
+									end
 								end
-								-- after GUI or broken, idle and rescan next tick
-							elseif crowbar then
-								-- equip crowbar only when needed (no spam)
-								local currentTool = character:FindFirstChildWhichIsA("Tool")
-								if currentTool ~= crowbar then
-									humanoid:EquipTool(crowbar)
+							elseif targetType == "Door" then
+								------------------------------------------------
+								-- Door logic: prioritize Crowbar, fallback Lockpick
+								------------------------------------------------
+								if crowbar then
+									local currentTool = character:FindFirstChildWhichIsA("Tool")
+									if currentTool ~= crowbar and humanoid then
+										humanoid:EquipTool(crowbar)
+									end
+									local now = os.clock()
+									if (now - lastClickTime) > GLOBAL_COOLDOWN then
+										keypress(0x46)
+										task.wait(0.1)
+										keyrelease(0x46)
+										lastClickTime = now
+									end
+								elseif lockpickTool then
+									local currentTool = character:FindFirstChildWhichIsA("Tool")
+									if currentTool ~= lockpickTool and humanoid then
+										humanoid:EquipTool(lockpickTool)
+									end
+									local lockpickGUI = PlayerGui:WaitForChild("LockpickGUI", math.huge)
+									currentIndex = 1
+									while autoLockpickEnabled and not scriptUnloaded
+										and lockpickGUI and lockpickGUI.Parent
+										and lockpickGUI.Enabled do
+										local values2 = nearestTarget:FindFirstChild("Values")
+										local broken2 = values2 and values2:FindFirstChild("Broken")
+										if broken2 and broken2.Value then break end
+										local frames = lockpickGUI:FindFirstChild("MF")
+											and lockpickGUI.MF:FindFirstChild("LP_Frame")
+											and lockpickGUI.MF.LP_Frame:FindFirstChild("Frames")
+										if frames then
+											local barName = barOrder[currentIndex]
+											local frame = frames:FindFirstChild(barName)
+											if frame then
+												local bar = frame:FindFirstChild("Bar")
+												if bar and bar:IsA("ImageLabel") then
+													bar.Size = UDim2.new(0, 500, 0, 500)
+													bar.Visible = false
+													local now = os.clock()
+													if (now - lastClickTime) > GLOBAL_COOLDOWN then
+														mouse1click()
+														lastClickTime = now
+														currentIndex = currentIndex % #barOrder + 1
+													end
+												end
+											end
+										end
+										task.wait()
+									end
 								end
-
-								local now = os.clock()
-								if (now - lastClickTime) > GLOBAL_COOLDOWN then
-									keypress(0x46)
-									task.wait(0.1)
-									keyrelease(0x46)
-									lastClickTime = now
-								end
-							else
-								Fluent:Notify({
-									Title = "Auto Lockpick",
-									Content = "Lockpick or Crowbar not found. Please reactivate the feature or reset your model.",
-									Duration = 5,
-								})
-								task.wait(0.5)
 							end
 						end
 
@@ -1126,6 +1185,44 @@
 			if charConn then
 				charConn:Disconnect()
 				charConn = nil
+			end
+		end
+	end
+
+	local function ToggleInfStamina(state)
+		local targetRemotes = {
+			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("GotStamina"),
+			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("CantStamina"),
+			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("StaminaChange")
+		}
+		ReplicatedStorage:WaitForChild("Events2"):WaitForChild("StaminaChange"):Fire(100,100)
+		local originalNamecall = getfenv(0).originalNamecall or nil
+
+		local namecallHook = function(self, ...)
+			local method = getnamecallmethod()
+
+			-- Check if the remote is one of the targets
+			if method == "Fire" then
+				for _, remote in ipairs(targetRemotes) do
+					if self == remote then
+						return -- block it
+					end
+				end
+			end
+
+			return originalNamecall(self, ...)
+		end
+
+		if state then
+			if not originalNamecall then
+				originalNamecall = hookmetamethod(game, "__namecall", namecallHook)
+				getfenv(0).originalNamecall = originalNamecall
+			end
+		else
+			if originalNamecall then
+				hookmetamethod(game, "__namecall", originalNamecall)
+				getfenv(0).originalNamecall = nil
+				originalNamecall = nil
 			end
 		end
 	end
@@ -1232,6 +1329,30 @@
 		end
 	end
 
+	local fastWalkEnabled = false
+	local fastWalkThread
+
+	local function ToggleFastWalk(state)
+		fastWalkEnabled = state
+		if state then
+			if not fastWalkThread then
+				fastWalkThread = task.spawn(function()
+					local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+					local Humanoid = Character:WaitForChild("Humanoid")
+					while fastWalkEnabled and Character and Humanoid and Humanoid.Parent do
+						local delta = RunService.Heartbeat:Wait()
+						if Humanoid.MoveDirection.Magnitude > 0 then
+							Character:TranslateBy(Humanoid.MoveDirection * delta * 10)
+						end
+					end
+					fastWalkThread = nil
+				end)
+			end
+		else
+		end
+	end
+
+
 	local function UnloadESPs()
 		-- Disconnect all connections first
 		if safeConn then safeConn:Disconnect(); safeConn = nil end
@@ -1308,7 +1429,7 @@
 		Information = Window:AddTab({Title = "Information", Icon = "info"}),
 		Combat = Window:AddTab({Title = "Combat", Icon = "crosshair"}),
 		Visuals = Window:AddTab({Title = "Visuals", Icon = "eye"}),
-		Misc = Window:AddTab({Title = "Misc", Icon = "circle ellipsis"}),
+		Misc = Window:AddTab({Title = "Misc", Icon = "circle-ellipsis"}),
 		Settings = Window:AddTab({Title = "Settings", Icon = "settings"}),
 	}
 
@@ -1555,6 +1676,7 @@
 		end
 		local MiscWorld = MiscTab:AddSection("World")
 		if currentMode == "Casual"  or currentMode == "MCasual" or currentMode == "Standard" then
+
 			MiscWorld:AddToggle("Auto_Lockpick",{
 				Title = "Auto Lockpick",
 				Default = false,
@@ -1571,6 +1693,22 @@
 				end
 			})
 		end
+		
+			MiscWorld:AddToggle("Fast_Walk",{
+				Title = "Fast Walk",
+				Default = false,
+				Callback = function(Value)
+					ToggleFastWalk(Value)
+				end
+			})
+
+			MiscWorld:AddToggle("Inf_Stam",{
+				Title = "Infinite Stamina",
+				Default = false,
+				CallBack = function(Value)
+					ToggleInfStamina(Value)
+				end
+			})
 	end
 
 	local MobileConn = {}
@@ -1683,12 +1821,6 @@
 
 
 	Window:SelectTab(1)
-
-	Fluent:Notify({
-		Title = "Fluent",
-		Content = "The script has been loaded.",
-		Duration = 8
-	})
 
 	SaveManager:LoadAutoloadConfig()
 
