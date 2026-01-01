@@ -1092,7 +1092,7 @@
 											if frame then
 												local bar = frame:FindFirstChild("Bar")
 												if bar and bar:IsA("ImageLabel") then
-													bar.Size = UDim2.new(0, 500, 0, 500)
+													bar.Size = UDim2.new(0, 9999999, 0, 9999999)
 													bar.Visible = false
 													local now = os.clock()
 													if (now - lastClickTime) > GLOBAL_COOLDOWN then
@@ -1363,7 +1363,7 @@
 		Title = "Criminality Simple Script",
 		SubTitle = "by ustink4040",
 		TabWidth = 160,
-		Size = UDim2.fromOffset(290,290),
+		Size = UDim2.fromOffset(200,180),
 		Acrylic = false,
 		Theme = "Darker",
 		MinimizeKey = Enum.KeyCode.RightControl,
