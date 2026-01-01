@@ -74,11 +74,13 @@ local autoLockpickThread
 local IsOnMobile = false
 local FluentMenu
 
+--[[]]
 xpcall(function()
 	IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform())
 end, function()
 	IsOnMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end)
+--]]
 
 --// Checking for multiple processes (FIXED)
 -- This check now correctly verifies if the global table and its Exit method exist before trying to call them.
@@ -1381,9 +1383,11 @@ else
 end
 
 for _, gui in ipairs(CoreGui:GetChildren()) do
-	if gui:IsA("ScreenGui") and gui.AbsoluteSize == Vector2.new(580,460) or gui.AbsoluteSize == Vector2.new(302,239) then
+	if gui:IsA("ScreenGui") then
+		if gui:IsA("Frame") and gui.AbsoluteSize == Vector2.new(580,460) or gui.AbsoluteSize == Vector2.new(302,239) then
 		FluentMenu = gui
 		break
+		end
 	end
 end --// Find Menu
 
