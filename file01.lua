@@ -1666,7 +1666,6 @@
 
 			MiscWorld:AddButton({
 				Title = "Infinite Stamina",
-				Default = false,
 				CallBack = function()
 					local ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
 					ReplicatedStorage:WaitForChild("Events2"):WaitForChild("GotStamina"):Destroy()
