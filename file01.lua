@@ -1189,44 +1189,6 @@
 		end
 	end
 
-	local function ToggleInfStamina(state)
-		local targetRemotes = {
-			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("GotStamina"),
-			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("CantStamina"),
-			ReplicatedStorage:WaitForChild("Events2"):WaitForChild("StaminaChange")
-		}
-		ReplicatedStorage:WaitForChild("Events2"):WaitForChild("StaminaChange"):Fire(100,100)
-		local originalNamecall = getfenv(0).originalNamecall or nil
-
-		local namecallHook = function(self, ...)
-			local method = getnamecallmethod()
-
-			-- Check if the remote is one of the targets
-			if method == "Fire" then
-				for _, remote in ipairs(targetRemotes) do
-					if self == remote then
-						return -- block it
-					end
-				end
-			end
-
-			return originalNamecall(self, ...)
-		end
-
-		if state then
-			if not originalNamecall then
-				originalNamecall = hookmetamethod(game, "__namecall", namecallHook)
-				getfenv(0).originalNamecall = originalNamecall
-			end
-		else
-			if originalNamecall then
-				hookmetamethod(game, "__namecall", originalNamecall)
-				getfenv(0).originalNamecall = nil
-				originalNamecall = nil
-			end
-		end
-	end
-
 	local function ToggleAutoBreakRegister(state)
 		if scriptUnloaded then return end
 
@@ -1702,11 +1664,13 @@
 				end
 			})
 
-			MiscWorld:AddToggle("Inf_Stam",{
+			MiscWorld:AddButton({
 				Title = "Infinite Stamina",
 				Default = false,
-				CallBack = function(Value)
-					ToggleInfStamina(Value)
+				CallBack = function()
+					ReplicatedStorage:WaitForChild("Events2"):WaitForChild("GotStamina"):Destroy()
+					ReplicatedStorage:WaitForChild("Events2"):WaitForChild("CantStamina"):Destroy()
+					ReplicatedStorage:WaitForChild("Events2"):WaitForChild("StaminaChange"):Destroy()
 				end
 			})
 	end
