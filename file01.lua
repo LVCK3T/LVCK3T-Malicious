@@ -1678,25 +1678,30 @@
 	local MobileConn = {}
 	if IsOnMobile then
 		Hidebuttons()
-		local CRIM_01_BTN = Instance.new("ScreenGui")
-		local TextButton = Instance.new("TextButton")
+		local QuickCapture = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
-
-		CRIM_01_BTN.Parent = CoreGui
-		TextButton.Position = UDim2.new(0, 0,0, 0)
-		TextButton.Size = UDim2.new(0.02, 0,0.034, 0)
-		TextButton.Text = "TG"
-		TextButton.Parent = CRIM_01_BTN
-		UICorner.CornerRadius = UDim.new(1,0)
-		UICorner.Parent = TextButton
-
-		MobileConn[1] = TextButton.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		QuickCapture.Name = "randomString()"
+		QuickCapture.Parent = CoreGui
+		QuickCapture.BackgroundColor3 = Color3.fromRGB(46, 46, 47)
+		QuickCapture.BackgroundTransparency = 0.14
+		QuickCapture.Position = UDim2.new(0.489, -128,-0.003, 2)
+		QuickCapture.Size = UDim2.new(0, 32, 0, 33)
+		QuickCapture.Font = Enum.Font.SourceSansBold
+		QuickCapture.Text = "TG"
+		QuickCapture.TextColor3 = Color3.fromRGB(255, 255, 255)
+		QuickCapture.TextSize = 20
+		QuickCapture.TextWrapped = true
+		QuickCapture.ZIndex = 10
+		QuickCapture.Draggable = true
+		UICorner.Name = "randomString()"
+		UICorner.CornerRadius = UDim.new(0.5, 0)
+		UICorner.Parent = QuickCapture
+	MobileConn[1] =	QuickCapture.MouseButton1Click:Connect(function()
 				if FluentMenu then
 					FluentMenu.Enabled = not FluentMenu.Enabled
 				end
-			end
 		end)
+
 	end
 
 	--// Privacy protection
