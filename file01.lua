@@ -1381,7 +1381,7 @@
 	end
 
 	for _, gui in ipairs(CoreGui:GetChildren()) do
-		 if gui:IsA("ScreenGui") and gui.AbsoluteSize == Vector2.new(580,460) then
+		 if gui:IsA("ScreenGui") and gui.AbsoluteSize == Vector2.new(580,460) or gui.AbsoluteSize = Vector2.new(302,239) then
 			 FluentMenu = gui
 			 break
 		 end
