@@ -1694,7 +1694,7 @@ do
 		Title = "Noclip",
 		Default = false,
 		Callback = function(Value)
-			
+			ToggleNoclip(Value)
 		end
 	})
 
