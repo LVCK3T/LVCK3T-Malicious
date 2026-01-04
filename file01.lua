@@ -1,5 +1,3 @@
-
-
 --// Cache
 local game, workspace = game, workspace
 local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick
@@ -1230,7 +1228,7 @@ local function ToggleAutoBreakRegister(state)
 
 						if nearestRegister and nearestDist and nearestDist <= DISTANCE_THRESHOLD then
 							local backpack = LocalPlayer:FindFirstChild("Backpack")
-							if backpack then
+							if backpack and character and not isDead then
 								local currentTool = character and character:FindFirstChildWhichIsA("Tool")
 								local crowbar = (backpack and backpack:FindFirstChild("Crowbar")) or (character and character:FindFirstChild("Crowbar"))
 								local fists = (backpack and backpack:FindFirstChild("Fists")) or (character and character:FindFirstChild("Fists"))
