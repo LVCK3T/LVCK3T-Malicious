@@ -1317,27 +1317,42 @@ local function ToggleFastWalk(state)
 	end
 end
 
+local noclipEnabled = false
+local noclipThread
+
 local function ToggleNoclip(state)
     if scriptUnloaded then return end
-
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    if not character then return end
+    noclipEnabled = state
 
     if state then
-        for _, part in ipairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
+        if not noclipThread then
+            noclipThread = task.spawn(function()
+                while noclipEnabled and not scriptUnloaded do
+                    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+                    if character then
+                        for _, part in ipairs(character:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                    task.wait() -- run every frame
+                end
+            end)
         end
     else
-        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if noclipThread then
+            task.cancel(noclipThread)
+            noclipThread = nil
+        end
+        -- re-enable collision only for HRP
+        local character = LocalPlayer.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
         if hrp and hrp:IsA("BasePart") then
             hrp.CanCollide = true
         end
     end
 end
-
-
 
 local function UnloadESPs()
 	-- Disconnect all connections first
