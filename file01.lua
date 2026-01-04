@@ -1,3 +1,5 @@
+
+
 --// Cache
 local game, workspace = game, workspace
 local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick
@@ -1264,7 +1266,7 @@ local function ToggleAutoBreakRegister(state)
 						end
 					else
 						local backpack = LocalPlayer:FindFirstChild("Backpack")
-						if backpack then
+						if backpack and not isDead then
 							local fists = backpack:FindFirstChild("Fists")
 							if fists then
 								humanoid:EquipTool(fists)
@@ -1295,6 +1297,7 @@ local fastWalkEnabled = false
 local fastWalkThread
 
 local function ToggleFastWalk(state)
+	if scriptUnloaded then return end
 	fastWalkEnabled = state
 	if state then
 		if not fastWalkThread then
@@ -1313,6 +1316,27 @@ local function ToggleFastWalk(state)
 	else
 	end
 end
+
+local function ToggleNoclip(state)
+    if scriptUnloaded then return end
+
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    if not character then return end
+
+    if state then
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    else
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp:IsA("BasePart") then
+            hrp.CanCollide = true
+        end
+    end
+end
+
 
 
 local function UnloadESPs()
@@ -1666,6 +1690,14 @@ do
 		end
 	})
 
+	MiscWorld:AddToggle("Noclip",{
+		Title = "Noclip",
+		Default = false,
+		Callback = function(Value)
+			
+		end
+	})
+
 	MiscWorld:AddButton({
 		Title = "Infinite Stamina",
 		Callback = function()
@@ -1771,6 +1803,7 @@ task.spawn(function()
 			DisconnectESPConnections()
 
 			-- Destroy all ESP objects
+			ToggleFastWalk(false)
 			UnloadESPs()
 			break
 		end
