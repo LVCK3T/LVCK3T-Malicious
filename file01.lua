@@ -615,33 +615,43 @@ end
 
 --// Utility: Update Billboard Scale
 local function updateBillboardScale(billboard)
-	if not billboard or not billboard.Adornee then return end
+    if not billboard or not billboard.Adornee then return end
+    
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    
+    local dist = (cam.CFrame.Position - billboard.Adornee.Position).Magnitude
 
-	local cam = workspace.CurrentCamera
-	if not cam then return end
+    -- Billboard Scaling (Controls the size of the box/background)
+    -- We clamp the max scale to 0.9 so the box never gets "Oversized"
+    local effectiveDist = math.max(dist, 5) 
+    local scaleFactor = math.clamp(60 / effectiveDist, 0.4, 0.9)
+    billboard.Size = UDim2.new(0, 200 * scaleFactor, 0, 50 * scaleFactor)
 
-	-- distance from camera to adornee
-	local dist = (cam.CFrame.Position - billboard.Adornee.Position).Magnitude
+    -- Hide if too far
+    if dist > 500 then
+        billboard.Enabled = false
+        return
+    else
+        billboard.Enabled = true
+    end
 
-	-- scale factor: shrink when far, clamp between 0.5x and 1.5x
-	local scale = math.clamp(100 / dist, 0.5, 1.5)
-
-	-- apply size scaling
-	billboard.Size = UDim2.new(0, 200 * scale, 0, 50 * scale)
-
-	-- optional: hide billboards beyond 1000 studs
-	if dist > 500 then
-		billboard.Enabled = false
-	else
-		billboard.Enabled = true
-	end
-
-	-- optional: refresh text if Info label exists
-	local textLabel = billboard:FindFirstChild("Info")
-	if textLabel then
-		-- you can add distance info here if desired
-		-- textLabel.Text = textLabel.Text .. " | " .. math.floor(dist) .. " studs"
-	end
+    -- Dynamic Text Size Logic
+    local textLabel = billboard:FindFirstChild("Info")
+    if textLabel then
+        -- Formula: Calculate size based on distance.
+        -- 10 is the minimum size (up close).
+        -- 14 is the maximum size (at medium/far distance).
+        -- It smoothly transitions between these two.
+        
+        -- If distance < 15 studs, we shrink the text down to 10 (Min)
+        -- If distance > 60 studs, we max the text at 14 (Max)
+        local dynamicSize = math.clamp(10 + (dist / 30), 10, 14)
+        
+        textLabel.TextSize = dynamicSize
+        textLabel.TextWrapped = true
+    end
+end
 end
 
 --// ATM
