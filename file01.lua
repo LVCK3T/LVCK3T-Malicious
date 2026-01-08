@@ -74,6 +74,7 @@ local autoLockpickThread
 local IsOnMobile = false
 local FluentMenu
 local dealerConn
+
 --[[]]
 xpcall(function()
 	IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform())
@@ -443,32 +444,47 @@ local safeConn, registerConn, atmConn, crateConn, playerAddedConn
 local charAddedConns = {}
 local billboardConnections = {}
 
+-- Create a table to store active billboards specifically for the update loop
+-- This prevents iterating over thousands of CoreGui children every frame
+local ActiveBillboards = {}
+
+
+
 --// Utility: Highlight	
 local function getHighlight(target, color, prefix)
-	if scriptUnloaded then return nil end
+    if scriptUnloaded then return nil end
+    
+    -- PERFORMANCE CHECK: Don't highlight things that are super far away
+    local dist = 0
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if target and hrp then
+        local targetPart = target:IsA("BasePart") and target or target:FindFirstChildWhichIsA("BasePart")
+        if targetPart then
+            dist = (hrp.Position - targetPart.Position).Magnitude
+            if dist > 500 then -- Don't highlight anything further than 500 studs
+                return nil 
+            end
+        end
+    end
 
-	local adornee
-	if target:IsA("Model") then
-		adornee = target   -- highlight the whole model
-	elseif target:IsA("BasePart") then
-		adornee = target   -- highlight just this part
-	else
-		return nil
-	end
+    local name = getUniqueName(prefix, target, "_ESPHighlight")
+    local existing = CoreGui:FindFirstChild(name)
+    if existing then 
+        existing:Destroy() 
+    end
 
-	local safeName = target and target.Name or "Unknown"
-	local name = prefix .. "_" .. safeName .. "_ESPHighlight"
-	local old = CoreGui:FindFirstChild(name)
-	if old then old:Destroy() end
-
-	local highlight = Instance.new("Highlight")
-	highlight.Name = name
-	highlight.Adornee = adornee
-	highlight.FillColor = color
-	highlight.FillTransparency = 0.5
-	highlight.OutlineTransparency = 1
-	highlight.Parent = CoreGui
-	return highlight
+    local highlight = Instance.new("Highlight")
+    highlight.Name = name
+    highlight.FillColor = color
+    highlight.OutlineTransparency = 1 -- Keep outline off, it's expensive
+    
+    -- OPTIMIZATION: Set FillTransparency higher (more transparent) is cheaper,
+    -- but setting DepthMode to AlwaysOnTop helps rendering culling issues
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop 
+    
+    highlight.Adornee = target
+    highlight.Parent = CoreGui
+    return highlight
 end
 
 -- Waits up to timeout seconds for a visible adornee part
@@ -656,7 +672,6 @@ local function highlightModel(model, baseColor, prefix)
 		local textLabel = billboard and billboard:FindFirstChild("Info")
 		if not textLabel then return end
 		local modelName = (model and model.Name) or "Unknown"
---[[
 		if broken and broken.Value == true then
 			highlight.FillColor = Color3.fromRGB(255,0,0)
 			textLabel.Text = modelName-- .. " | Broken"
@@ -666,7 +681,6 @@ local function highlightModel(model, baseColor, prefix)
 			textLabel.Text = modelName-- .. " | Intact"
 			textLabel.TextColor3 = baseColor
 		end
-]]
 	end
 
 	update()
@@ -1643,7 +1657,6 @@ do
 
 	local VisualsPlayersSection = VisualsTab:AddSection("Players")
 
---[[
 	VisualsWorldSection:AddToggle("Hide_Names", {
 		Title = "Hide Billboard Text",
 		Default = false,
@@ -1659,7 +1672,6 @@ do
 			end
 		end
 	})
-]]
 	VisualsPlayersSection:AddToggle("Player_ESP", {
 		Title = "Player ESP",
 		Default = false,
@@ -1785,31 +1797,50 @@ task.spawn(function()
 end)
 
 task.spawn(function()
+    local function trackBillboard(billboard)
+        if not ActiveBillboards[billboard] then
+            ActiveBillboards[billboard] = true
+        end
+    end
+
+    local function untrackBillboard(billboard)
+        ActiveBillboards[billboard] = nil
+    end
     while not scriptUnloaded do
-        for _, billboard in ipairs(CoreGui:GetChildren()) do
-            if billboard:IsA("BillboardGui") and billboard.Name:find("_ESPBillboard") then
-                if not billboard.Adornee or not billboard.Adornee.Parent then
-                    local targetName = billboard.Name:match("^(.-)_ESPBillboard")
-                    local cleanName = targetName:match("^(.-)_%d+") or targetName
-                    local target = workspace:FindFirstChild(cleanName, true)
-                    if target then
-                        local adorneePart = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart")
-                        if adorneePart then
-                            billboard.Adornee = adorneePart
-                        end
+        local BillboardCount = 0
+
+        for _, billboard in pairs(ActiveBillboards) do
+
+        end
+
+        for _, gui in ipairs(CoreGui:GetChildren()) do
+            if not gui:IsA("BillboardGui") or not gui.Name:find("_ESPBillboard") then
+                continue -- Skip anything that isn't our ESP
+            end
+
+            if not gui.Adornee or not gui.Adornee.Parent then
+                local targetName = gui.Name:match("^(.-)_ESPBillboard")
+                local cleanName = targetName:match("^(.-)_%d+") or targetName
+                local target = workspace:FindFirstChild(cleanName, true)
+                if target then
+                    local adorneePart = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart")
+                    if adorneePart then
+                        gui.Adornee = adorneePart
                     end
                 end
+            end
 
-                updateBillboardScale(billboard)
+            if gui.Adornee then
+                updateBillboardScale(gui)
+            end
 
-                local info = billboard:FindFirstChild("Info")
-                if info then
-                    info.Visible = not namesHidden
-                end
+            local info = gui:FindFirstChild("Info")
+            if info then
+                info.Visible = not namesHidden
             end
         end
         
-        task.wait() -- Run every frame
+        task.wait(0.1)
     end
 end)
 
