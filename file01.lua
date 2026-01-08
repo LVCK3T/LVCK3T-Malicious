@@ -67,13 +67,13 @@ local MainGui = PlayerGui and PlayerGui:FindFirstChild("CoreGUI")
 local MainMobileGui = PlayerGui and PlayerGui:FindFirstChild("MobileButtonGUI")
 
 local scriptUnloaded = false
-
+local namesHidden = false
 local autoLockpickEnabled = false
 local autoLockpickThread
 
 local IsOnMobile = false
 local FluentMenu
-
+local dealerConn
 --[[]]
 xpcall(function()
 	IsOnMobile = table.find({Enum.Platform.Android, Enum.Platform.IOS}, UserInputService:GetPlatform())
@@ -1640,6 +1640,22 @@ do
 	end
 
 	local VisualsPlayersSection = VisualsTab:AddSection("Players")
+
+	VisualsWorldSection:AddToggle("Hide_Names", {
+		Title = "Hide Billboard Text",
+		Default = false,
+		Callback = function(Value)
+			namesHidden = Value
+			for _, gui in ipairs(CoreGui:GetChildren()) do
+				if gui:IsA("BillboardGui") and gui.Name:find("_ESPBillboard") then
+					local info = gui:FindFirstChild("Info")
+					if info then
+						info.Enabled = not Value
+					end
+				end
+			end
+		end
+	})
 	VisualsPlayersSection:AddToggle("Player_ESP", {
 		Title = "Player ESP",
 		Default = false,
@@ -1765,26 +1781,32 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-	while not scriptUnloaded do
-		for _, billboard in ipairs(CoreGui:GetChildren()) do
-			if billboard:IsA("BillboardGui") and billboard.Name:find("_ESPBillboard") then
-				if not billboard.Adornee or not billboard.Adornee.Parent then
-					-- try to rebind adornee
-					local targetName = billboard.Name:match("^(.-)_ESPBillboard")
-					local target = workspace:FindFirstChild(targetName, true)
-					if target then
-						local adorneePart = target:FindFirstChild("HumanoidRootPart")
-							or target:FindFirstChild("Head")
-							or target:FindFirstChildWhichIsA("BasePart")
-						if adorneePart then
-							billboard.Adornee = adorneePart
-						end
-					end
-				end
-			end
-		end
-		task.wait(1) -- throttle for performance
-	end
+    while not scriptUnloaded do
+        for _, billboard in ipairs(CoreGui:GetChildren()) do
+            if billboard:IsA("BillboardGui") and billboard.Name:find("_ESPBillboard") then
+                if not billboard.Adornee or not billboard.Adornee.Parent then
+                    local targetName = billboard.Name:match("^(.-)_ESPBillboard")
+                    local cleanName = targetName:match("^(.-)_%d+") or targetName
+                    local target = workspace:FindFirstChild(cleanName, true)
+                    if target then
+                        local adorneePart = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head") or target:FindFirstChildWhichIsA("BasePart")
+                        if adorneePart then
+                            billboard.Adornee = adorneePart
+                        end
+                    end
+                end
+
+                updateBillboardScale(billboard)
+
+                local info = billboard:FindFirstChild("Info")
+                if info then
+                    info.Enabled = not namesHidden
+                end
+            end
+        end
+        
+        task.wait() -- Run every frame
+    end
 end)
 
 --// Proper Unload Handling
