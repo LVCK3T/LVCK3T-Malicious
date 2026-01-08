@@ -1800,7 +1800,7 @@ task.spawn(function()
 
                 local info = billboard:FindFirstChild("Info")
                 if info then
-                    info.Enabled = not namesHidden
+                    info.Visible = not namesHidden
                 end
             end
         end
