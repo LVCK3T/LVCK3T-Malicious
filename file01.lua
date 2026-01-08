@@ -664,12 +664,14 @@ local function highlightATM(model, baseColor)
 	local highlight = getHighlight(model, baseColor, "ATM")
 	local billboard = ensureBillboard(model, "ATM")
 
+--[[
 	local textLabel = billboard and billboard:FindFirstChild("Info")
 	if textLabel then
 		local modelName = (model and model.Name) or "Unknown"
 		textLabel.Text = modelName --.. " | ATM"
 		textLabel.TextColor3 = baseColor -- cyan text
 	end
+]]
 
 	highlight.FillColor = baseColor
 end
@@ -688,12 +690,16 @@ local function highlightModel(model, baseColor, prefix)
 		local modelName = (model and model.Name) or "Unknown"
 		if broken and broken.Value == true then
 			highlight.FillColor = Color3.fromRGB(255,0,0)
+--[[
 			textLabel.Text = modelName-- .. " | Broken"
 			textLabel.TextColor3 = Color3.fromRGB(255,0,0)
+]]
 		else
 			highlight.FillColor = baseColor
+--[[
 			textLabel.Text = modelName-- .. " | Intact"
 			textLabel.TextColor3 = baseColor
+]]
 		end
 	end
 
@@ -722,9 +728,11 @@ local function highlightCrate(model)
 
 	local textLabel = billboard:FindFirstChild("Info")
 	if textLabel then
+--[[
 		local modelName = (model and model.Name) or "Unknown"
 		textLabel.Text = modelName-- .. " | " .. (prefix == "C1Red" and "Red Crate" or "Green Crate")
 		textLabel.TextColor3 = baseColor
+]]
 	end
 	highlight.FillColor = baseColor
 end
