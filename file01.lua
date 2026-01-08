@@ -622,11 +622,21 @@ local function updateBillboardScale(billboard)
     
     local dist = (cam.CFrame.Position - billboard.Adornee.Position).Magnitude
 
-    -- Billboard Scaling (Controls the size of the box/background)
-    -- We clamp the max scale to 0.9 so the box never gets "Oversized"
-    local effectiveDist = math.max(dist, 5) 
-    local scaleFactor = math.clamp(60 / effectiveDist, 0.4, 0.9)
-    billboard.Size = UDim2.new(0, 200 * scaleFactor, 0, 50 * scaleFactor)
+    -- 1. Fix the Background Box (Billboard Size)
+    -- We use a larger base width (500) to accommodate HP, Team, Tool, etc.
+    -- We only shrink if distance > 50 studs. If close, keep it full size.
+    
+    local width, height = 500, 100 -- Base dimensions
+    
+    if dist > 50 then
+        -- If far away, shrink the box to avoid flooding the screen
+        -- Shrinks down to 40% size at maximum distance
+        local scaleFactor = math.clamp(1500 / dist, 0.4, 1.0)
+        billboard.Size = UDim2.new(0, width * scaleFactor, 0, height * scaleFactor)
+    else
+        -- If close (dist <= 50), keep it full size (1.0) so nothing gets cut off
+        billboard.Size = UDim2.new(0, width, 0, height)
+    end
 
     -- Hide if too far
     if dist > 500 then
@@ -636,19 +646,14 @@ local function updateBillboardScale(billboard)
         billboard.Enabled = true
     end
 
-    -- Dynamic Text Size Logic
+    -- 2. Fix the Text Size
     local textLabel = billboard:FindFirstChild("Info")
     if textLabel then
-        -- Formula: Calculate size based on distance.
-        -- 10 is the minimum size (up close).
-        -- 14 is the maximum size (at medium/far distance).
-        -- It smoothly transitions between these two.
-        
-        -- If distance < 15 studs, we shrink the text down to 10 (Min)
-        -- If distance > 60 studs, we max the text at 14 (Max)
+        -- Dynamic font size: 10 (close) to 14 (far)
         local dynamicSize = math.clamp(10 + (dist / 30), 10, 14)
-        
         textLabel.TextSize = dynamicSize
+        
+        -- Ensure wrapping is ON
         textLabel.TextWrapped = true
     end
 end
