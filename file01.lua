@@ -656,6 +656,7 @@ local function highlightModel(model, baseColor, prefix)
 		local textLabel = billboard and billboard:FindFirstChild("Info")
 		if not textLabel then return end
 		local modelName = (model and model.Name) or "Unknown"
+--[[
 		if broken and broken.Value == true then
 			highlight.FillColor = Color3.fromRGB(255,0,0)
 			textLabel.Text = modelName-- .. " | Broken"
@@ -665,6 +666,7 @@ local function highlightModel(model, baseColor, prefix)
 			textLabel.Text = modelName-- .. " | Intact"
 			textLabel.TextColor3 = baseColor
 		end
+]]
 	end
 
 	update()
@@ -1641,6 +1643,7 @@ do
 
 	local VisualsPlayersSection = VisualsTab:AddSection("Players")
 
+--[[
 	VisualsWorldSection:AddToggle("Hide_Names", {
 		Title = "Hide Billboard Text",
 		Default = false,
@@ -1656,6 +1659,7 @@ do
 			end
 		end
 	})
+]]
 	VisualsPlayersSection:AddToggle("Player_ESP", {
 		Title = "Player ESP",
 		Default = false,
